@@ -195,7 +195,7 @@ public:
 
         pubState = this->create_publisher<nav_msgs::msg::Odometry>("/filtered", 10);
 
-        ownTimer = this->create_wall_timer(std::chrono::seconds(1), std::bind(&MyNode::timerCallback, this));
+        ownTimer = this->create_wall_timer(std::chrono::seconds(1), std::bind(&SensorFusionNode::timerCallback, this));
 
     }
 
