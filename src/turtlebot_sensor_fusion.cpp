@@ -55,14 +55,15 @@ private:
     Eigen::Matrix4f P = Eigen::Matrix4f::Random(4, 4);
     // Make sure the matrix is positive definite
     P = P * P.transpose();
-
-    Eigen::Matrix4f Q = Eigen::Matrix4f::Random(4, 4);
-    Eigen::Matrix4f R = Eigen::Matrix2f::Random(2, 2);
+    
+    // Declare the Q and R matrix
+    Eigen::MatrixXf Q = Eigen::MatrixXf::Random(4, 4);
+    Eigen::MatrixXf R = Eigen::MatrixXf::Random(2, 2);
 
     /*
     w: The Gaussian noise with mean = 0.0 and std = 0.8.
     */
-    Eigen::Vector4f w = 0.8 * Eigen::Vector4f::Random(4, 1) + 0.0;
+    
 
     //Create a queue to store the measurement information.
     std::queue<measurement> meas_queue;
@@ -161,6 +162,8 @@ public:
         //Some basic parameters
         robotNamespace = this->get_parameter("robotNamespace").as_string();
         state = this->get_parameter("robotInitState");
+        Q = this->get_parameter("QMatrix");
+        R = this->get_parameter("RMatrix");
 
         /*
         Generate the topic string name that we need.
@@ -204,7 +207,7 @@ public:
     The kalman filter process.
     */
     Eigen::Vector4f kalmanFilter(Eigen::Matrix4f A, Eigen::Matrix4f B, Eigen::MatrixXf H, Eigen::Vector4f state, Eigen::Vector2f input, Eigen::Vector2f measurement, 
-                                Eigen::Matrix4f P, Eigen::Matrix4f Q, Eigen::Matrix2f R, Eigen::Vector4f w)
+                                Eigen::Matrix4f P, Eigen::MatrixXf Q, Eigen::MatrixXf R)
     {
         //[x, y, vx, vy]
         Eigen::Vector4f statePred;
@@ -215,7 +218,7 @@ public:
         Eigen::Vector4f stateUpdate;
         Eigen::Matrix4f PUpdate;
 
-        statePred = A * state + B * input + w;
+        statePred = A * state + B * input;
         PPred = A * P * A.transpose() + Q;
 
         y = measurement - H * statePred;
@@ -253,8 +256,11 @@ int main(int argc, char** argv) {
   rclcpp::init(argc, argv);
   //Declare the init state [x, y, vx, vy]
   Eigen::Vector4f initState {{0.0, 0.0, 0.0, 0.0}};
+  //Declare the Q matrix and R matrix
   auto node = std::make_shared<SensorFusionNode>();
   node->declare_parameter<std::string>("robotNamespace", "yosemite");
+  node->declare_parameter<Eigen::MatrixXf>("QMatrix", QMatrix);
+  node->declare_parameter<Eigen::MatrixXf>("RMatrix", RMatrix);
   node->declare_parameter<Eigen::Vector4f>("robotInitState", initState);
   rclcpp::spin(node);
   rclcpp::shutdown();
